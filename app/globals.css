@@ -1,18 +1,23 @@
 @import "tailwindcss";
 
-@theme {
-  --color-background: oklch(0.13 0.005 250);
-  --color-foreground: oklch(0.93 0.005 250);
-  --color-primary: oklch(0.75 0.15 160);
-  --color-card: oklch(0.18 0.005 250);
-  --color-secondary: oklch(0.22 0.005 250);
-  --color-border: oklch(0.28 0.005 250);
+/* VS Code가 100% 이해하는 표준 방식으로 색상 지정 */
+:root {
+  --background: #0a0a0a;
+  --foreground: #f0f0f0;
+  --primary: #bfff00; /* 징크스 네온 라임 */
+  --secondary: #ff00ff; /* 핫 핑크 포인트 */
+  --card: #141414;
+  --border: #1f1f1f;
 }
 
-/* 배경과 글자색을 직접 지정해서 에러를 방지합니다 */
 body {
-  background-color: oklch(0.13 0.005 250);
-  color: oklch(0.93 0.005 250);
+  background-color: var(--background);
+  color: var(--foreground);
   margin: 0;
-  font-family: system-ui, sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* 버튼 등에 쓰일 네온 컬러 클래스 */
+.text-primary { color: var(--primary); }
+.bg-primary { background-color: var(--primary); }

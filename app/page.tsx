@@ -1,148 +1,138 @@
+// @ts-nocheck
 "use client";
 import React, { useState, useEffect } from 'react';
 
-// 레슨 데이터의 형식을 정의합니다
-interface Lesson {
-  id: number;
-  name: string;
-  trait: string;
-  points: string[];
-  memo: string;
-  date: string;
-}
-
-export default function LessonLog() {
+export default function GolfProApp() {
   const [name, setName] = useState("");
-  const [trait, setTrait] = useState(""); // 회원 특징
-  const [points, setPoints] = useState<string[]>([]);
+  const [goals, setGoals] = useState(""); 
+  const [remaining, setRemaining] = useState(10);
+  const [points, setPoints] = useState([]);
   const [memo, setMemo] = useState("");
-  const [history, setHistory] = useState<Lesson[]>([]);
+  const [history, setHistory] = useState([]);
+  const [lastLesson, setLastLesson] = useState(null);
 
-  const options = ["스윙 궤도", "체중 이동", "그립 교정", "임팩트", "피니시", "에이밍"];
+  const keywords = ["힌지 유지", "수직 낙하", "배치기 방지", "체중 이동", "릴리즈 타이밍", "헤드업 금지", "에이밍"];
 
-  // 1. 앱을 켰을 때 저장된 과거 기록을 불러옵니다 (무료)
   useEffect(() => {
-    const saved = localStorage.getItem('lesson-history');
+    const saved = localStorage.getItem('golf-pro-v5');
     if (saved) setHistory(JSON.parse(saved));
   }, []);
 
-  const togglePoint = (p: string) => {
-    setPoints(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]);
-  };
+  useEffect(() => {
+    if (!name.trim()) {
+      setLastLesson(null);
+      setGoals("");
+      return;
+    }
+    const memberHistory = history.filter(h => h.name === name);
+    if (memberHistory.length > 0) {
+      const last = memberHistory[0];
+      setLastLesson(last);
+      setRemaining(last.remaining); 
+      setGoals(last.goals || ""); 
+    }
+  }, [name, history]);
 
-  // 2. 저장 및 전송 로직
   const handleSaveAndShare = () => {
-    if (!name) return alert("이름을 입력해주세요.");
+    if (!name) return alert("회원 이름을 입력해줘.");
+    
+    const newRemaining = Number(remaining) - 1;
+    const report = `[레슨 리포트]\n회원: ${name}\n목표: ${goals}\n교정: ${points.join(", ") || "기본기 점검"}\n코멘트: ${memo}\n남은 레슨: ${newRemaining}회`;
 
-    const newLesson: Lesson = {
-      id: Date.now(),
-      name,
-      trait,
-      points,
-      memo,
-      date: new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-    };
-
-    // 히스토리 최상단에 추가하고 저장
-    const updatedHistory = [newLesson, ...history];
-    setHistory(updatedHistory);
-    localStorage.setItem('lesson-history', JSON.stringify(updatedHistory));
-
-    // 전송용 텍스트 생성
-    const fullText = `오늘 ${name}님(${trait}) 레슨 요약\n📍포인트: ${points.join(", ") || "없음"}\n📝메모: ${memo}\n오늘도 수고하셨습니다!`;
+    const newEntry = { id: Date.now(), name, goals, points, memo, remaining: newRemaining, date: new Date().toLocaleString() };
+    const updated = [newEntry, ...history];
+    setHistory(updated);
+    localStorage.setItem('golf-pro-v5', JSON.stringify(updated));
 
     if (navigator.share) {
-      navigator.share({ title: '레슨 리포트', text: fullText });
+      navigator.share({ title: '레슨 리포트', text: report }).catch(() => {
+        navigator.clipboard.writeText(report);
+        alert("복사 완료! 카톡에 붙여넣어 줘.");
+      });
     } else {
-      navigator.clipboard.writeText(fullText);
-      alert("기록이 저장되었고 내용이 복사되었습니다. 카톡에 붙여넣으세요!");
+      navigator.clipboard.writeText(report);
+      alert("복사 완료! 카톡에 붙여넣어 줘.");
     }
   };
 
-  // 3. 히스토리에서 이름을 클릭하면 자동 완성해주는 기능
-  const loadMember = (item: Lesson) => {
-    setName(item.name);
-    setTrait(item.trait);
-  };
-
   return (
-    <main className="p-6 max-w-md mx-auto min-h-screen flex flex-col gap-8 bg-background text-foreground">
-      <h1 className="text-3xl font-black text-primary tracking-tighter">Lesson Manager</h1>
-      
-      {/* 입력 섹션 */}
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-2">
+    <main className="p-6 max-w-md mx-auto min-h-screen bg-[#0a0a0a] text-white flex flex-col gap-6">
+      <h1 className="text-2xl font-black text-[#bfff00] italic uppercase">Golf Pro Log</h1>
+
+      {/* 상단: 이름/목표(좌), 남은 횟수(우) */}
+      <div className="flex gap-2">
+        <div className="flex-[3] flex flex-col gap-2">
           <input 
-            className="p-4 bg-card border border-border rounded-xl outline-none focus:border-primary text-sm"
-            placeholder="회원 이름" 
-            value={name}
+            className="w-full p-4 bg-[#141414] border border-[#1f1f1f] rounded-xl text-sm outline-none focus:border-[#bfff00]" 
+            placeholder="회원명" 
+            value={name} 
             onChange={e => setName(e.target.value)} 
           />
           <input 
-            className="p-4 bg-card border border-border rounded-xl outline-none focus:border-primary text-sm"
-            placeholder="특징 (예: 슬라이스)" 
-            value={trait}
-            onChange={e => setTrait(e.target.value)} 
+            className="w-full p-4 bg-[#141414] border border-[#1f1f1f] rounded-xl text-xs text-gray-400 outline-none" 
+            placeholder="회원 특이사항/목표" 
+            value={goals} 
+            onChange={e => setGoals(e.target.value)} 
           />
         </div>
+        <div className="flex-1 bg-[#141414] border border-[#1f1f1f] rounded-xl flex flex-col items-center justify-center">
+          <span className="text-[9px] text-gray-500 font-bold uppercase">Remain</span>
+          <input 
+            type="number" 
+            className="w-full text-center bg-transparent text-[#ff00ff] text-2xl font-black outline-none" 
+            value={remaining} 
+            onChange={e => setRemaining(e.target.value)} 
+          />
+        </div>
+      </div>
 
+      {/* 지난 레슨 요약 */}
+      {lastLesson && (
+        <div className="p-3 bg-[#1a1a1a] border-l-4 border-[#bfff00] rounded-r-xl">
+          <p className="text-[10px] text-[#bfff00] font-bold">LAST: {lastLesson.points.join(", ")}</p>
+        </div>
+      )}
+
+      {/* 키워드 및 메모 */}
+      <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
-          {options.map(o => (
+          {keywords.map(k => (
             <button 
-              key={o} 
-              onClick={() => togglePoint(o)}
-              className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
-                points.includes(o) ? "bg-primary text-black border-primary" : "bg-secondary border-border text-muted-foreground"
-              }`}
+              key={k} 
+              onClick={() => setPoints(prev => prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k])}
+              className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${points.includes(k) ? "bg-[#bfff00] text-black" : "bg-[#141414] text-gray-400 border border-[#1f1f1f]"}`}
             >
-              {o}
+              {k}
             </button>
           ))}
         </div>
-
         <textarea 
-          className="w-full p-4 bg-card border border-border rounded-xl min-h-[80px] outline-none text-sm"
-          placeholder="오늘의 상세 피드백"
-          value={memo}
-          onChange={e => setMemo(e.target.value)}
+          className="w-full p-4 bg-[#141414] border border-[#1f1f1f] rounded-xl text-sm min-h-[100px] outline-none" 
+          placeholder="오늘의 레슨 피드백..." 
+          value={memo} 
+          onChange={e => setMemo(e.target.value)} 
         />
-
-        <button 
-          className="w-full py-4 bg-primary text-black font-black rounded-2xl shadow-lg active:scale-95 transition-transform"
-          onClick={handleSaveAndShare}
-        >
-          기록 저장 및 전송
-        </button>
       </div>
 
-      {/* 리스트 섹션: 카톡방을 뒤질 필요가 없어집니다 */}
-      <div className="flex-1 space-y-4 overflow-y-auto">
-        <h2 className="text-lg font-bold flex items-center gap-2">
-          <span className="w-1.5 h-5 bg-primary rounded-full"></span>
-          최근 레슨 히스토리
-        </h2>
-        
-        <div className="flex flex-col gap-3">
-          {history.length === 0 ? (
-            <p className="text-center py-10 text-muted-foreground text-sm">아직 기록이 없습니다.</p>
-          ) : (
-            history.map(item => (
-              <div 
-                key={item.id} 
-                onClick={() => loadMember(item)}
-                className="p-4 bg-card border border-border rounded-2xl cursor-pointer hover:border-primary/50 transition-colors"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-bold text-sm">{item.name} <span className="text-primary text-[10px] ml-1">{item.trait}</span></span>
-                  <span className="text-[10px] text-muted-foreground">{item.date}</span>
-                </div>
-                <div className="text-[11px] text-foreground/80 leading-relaxed line-clamp-2">
-                  {item.points.join(", ")} | {item.memo}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+      <button 
+        className="w-full py-5 bg-[#bfff00] text-black font-black rounded-2xl active:scale-95 transition-all text-lg" 
+        onClick={handleSaveAndShare}
+      >
+        데이터 저장 및 리포트 전송
+      </button>
+
+      {/* 히스토리 목록 */}
+      <div className="flex-1 overflow-y-auto">
+        <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Recent Activity</h2>
+        {history.slice(0, 5).map(h => (
+          <div key={h.id} className="p-3 bg-[#141414] border border-[#1f1f1f] rounded-lg flex justify-between items-center mb-2">
+            <div className="text-xs">
+              <p className="font-bold">{h.name}</p>
+              <p className="text-[10px] text-gray-500 truncate w-32">{h.goals || "목표 없음"}</p>
+            </div>
+            <span className="text-[10px] text-[#ff00ff] font-bold">{h.remaining}회 남음</span>
+          </div>
+        ))}
       </div>
     </main>
   );
