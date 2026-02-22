@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: oklch(0.13 0.005 250);
+  --color-foreground: oklch(0.93 0.005 250);
+  --color-primary: oklch(0.75 0.15 160);
+  --color-card: oklch(0.18 0.005 250);
+  --color-secondary: oklch(0.22 0.005 250);
+  --color-border: oklch(0.28 0.005 250);
+}
+
+/* 배경과 글자색을 직접 지정해서 에러를 방지합니다 */
+body {
+  background-color: oklch(0.13 0.005 250);
+  color: oklch(0.93 0.005 250);
+  margin: 0;
+  font-family: system-ui, sans-serif;
+}
